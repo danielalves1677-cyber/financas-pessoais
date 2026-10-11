@@ -38,3 +38,6 @@ data/*.sqlite3
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Gráficos gerados
+data/graficos/

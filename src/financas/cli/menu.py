@@ -2,6 +2,13 @@ from datetime import datetime
 
 from financas.config import ARQUIVO_DB, ARQUIVO_TRANSACOES, DB_BACKEND
 from financas.models import Meta, Orcamento, TipoTransacao, Transacao
+from financas.relatorios import (
+    grafico_comparativo_mensal,
+    grafico_evolucao_saldo,
+    grafico_pizza_categorias,
+    grafico_progresso_metas,
+    grafico_status_orcamentos,
+)
 from financas.repositories import criar_repositorio
 from financas.services import FinancasService
 from financas.utils import (
@@ -255,6 +262,32 @@ class MenuCLI:
                 return
         print("❌ Não encontrada.")
 
+    # ---------- Gráficos ----------
+    def gerar_grafico_evolucao(self) -> None:
+        self._cabecalho("📊 Evolução do Saldo")
+        caminho = grafico_evolucao_saldo(self.service.listar())
+        print(f"✅ Gráfico salvo em: {caminho}")
+
+    def gerar_pizza_categorias(self) -> None:
+        self._cabecalho("🥧 Pizza de Despesas por Categoria")
+        caminho = grafico_pizza_categorias(self.service.listar())
+        print(f"✅ Gráfico salvo em: {caminho}")
+
+    def gerar_comparativo_mensal(self) -> None:
+        self._cabecalho("📈 Comparativo Mensal")
+        caminho = grafico_comparativo_mensal(self.service.listar())
+        print(f"✅ Gráfico salvo em: {caminho}")
+
+    def gerar_grafico_metas(self) -> None:
+        self._cabecalho("🎯 Progresso das Metas")
+        caminho = grafico_progresso_metas(self.service.status_metas())
+        print(f"✅ Gráfico salvo em: {caminho}")
+
+    def gerar_grafico_orcamentos(self) -> None:
+        self._cabecalho("📊 Status dos Orçamentos")
+        caminho = grafico_status_orcamentos(self.service.status_orcamento())
+        print(f"✅ Gráfico salvo em: {caminho}")
+
     # ---------- Loop principal ----------
     def executar(self) -> None:
         opcoes = {
@@ -271,6 +304,11 @@ class MenuCLI:
             "11": ("📈 Ver Metas", self.ver_metas),
             "12": ("💰 Atualizar Meta", self.atualizar_meta),
             "13": ("🗑️  Remover Meta", self.remover_meta),
+            "14": ("📊 Gráfico: Evolução do Saldo", self.gerar_grafico_evolucao),
+            "15": ("🥧 Gráfico: Pizza de Categorias", self.gerar_pizza_categorias),
+            "16": ("📈 Gráfico: Comparativo Mensal", self.gerar_comparativo_mensal),
+            "17": ("🎯 Gráfico: Progresso das Metas", self.gerar_grafico_metas),
+            "18": ("📊 Gráfico: Status dos Orçamentos", self.gerar_grafico_orcamentos),
         }
 
         while True:
