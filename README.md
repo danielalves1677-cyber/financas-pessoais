@@ -4,8 +4,16 @@
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-66%20passing-brightgreen)]()
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://financas-peappais-h7wjjpvxupsdzmvwmgeuvy.streamlit.app)
 
-Gerenciador de finanças pessoais em Python com arquitetura limpa, testes automatizados e suporte a múltiplos backends de persistência (JSON e SQLite).
+Gerenciador de finanças pessoais em Python com arquitetura limpa, testes automatizados e **três interfaces**: CLI, GUI desktop e app web.
+
+## 🌐 App Online
+
+👉 **[Acessar o app web](https://financas-peappais-h7wjjpvxupsdzmvwmgeuvy.streamlit.app)**
+
+> Interface web hospedada gratuitamente no Streamlit Cloud.
+> Acesse do celular, tablet ou qualquer computador, sem instalar nada.
 
 ## ✨ Funcionalidades
 
@@ -14,6 +22,7 @@ Gerenciador de finanças pessoais em Python com arquitetura limpa, testes automa
 - 📈 **Metas** — acompanhamento com prazo, progresso e cálculo de valor mensal necessário
 - 📊 **Gráficos** — evolução do saldo, pizza de categorias, comparativo mensal, progresso de metas e status de orçamentos
 - 🔌 **Backends plugáveis** — JSON ou SQLite, escolhidos por variável de ambiente
+- 🖥️ **Três interfaces** — CLI (terminal), GUI (CustomTkinter) e Web (Streamlit)
 
 ## 🏗️ Arquitetura
 
@@ -23,6 +32,8 @@ src/financas/
 ├── repositories/   # Persistência (JSON e SQLite) — mesmo contrato
 ├── services/       # Regras de negócio
 ├── cli/            # Interface de linha de comando
+├── gui/            # Interface gráfica (CustomTkinter)
+├── web/            # App web (Streamlit + Plotly)
 ├── relatorios/     # Geração de gráficos com matplotlib
 ├── config/         # Configurações centralizadas
 └── utils/          # Formatadores e validadores
@@ -31,7 +42,7 @@ src/financas/
 Segue os princípios de **Clean Architecture** e **SOLID**:
 - Modelos não conhecem persistência
 - Repositórios são intercambiáveis (mesma interface)
-- Serviços não conhecem CLI nem banco
+- Serviços não conhecem CLI, GUI nem web
 - Fácil trocar de backend sem tocar em nada além do repositório
 
 ## 📸 Screenshots
@@ -74,11 +85,27 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-### 2. Execute
+### 2. Escolha a interface
+
+#### 🖥️ CLI (terminal)
 
 ```bash
 python -m financas
 ```
+
+#### 🪟 GUI Desktop (CustomTkinter)
+
+```bash
+python -m financas.gui
+```
+
+#### 🌐 App Web (Streamlit)
+
+```bash
+streamlit run src/financas/web/app.py
+```
+
+Abre automaticamente em `http://localhost:8501`.
 
 ### 3. Escolha o backend (opcional)
 
@@ -119,9 +146,13 @@ O CI roda automaticamente em **2 sistemas operacionais × 3 versões do Python**
 - **Python 3.10+**
 - **Pydantic 2** — validação de dados
 - **SQLAlchemy 2** — ORM
-- **matplotlib** — gráficos
+- **matplotlib** — gráficos (CLI e GUI)
+- **CustomTkinter** — GUI desktop
+- **Streamlit + Plotly** — app web
+- **pandas** — manipulação de dados na web
 - **pytest** — testes
 - **GitHub Actions** — CI/CD
+- **Streamlit Cloud** — deploy do app web
 
 ## 📋 Roadmap
 
@@ -129,8 +160,8 @@ O CI roda automaticamente em **2 sistemas operacionais × 3 versões do Python**
 - [x] Fase 2 — SQLite + SQLAlchemy
 - [x] Fase 3 — Orçamentos e metas
 - [x] Fase 4 — Gráficos com matplotlib
-- [ ] Fase 5 — Interface gráfica (CustomTkinter)
-- [ ] Fase 6 — App web (Streamlit)
+- [x] Fase 5 — GUI desktop (CustomTkinter)
+- [x] Fase 6 — App web (Streamlit) + deploy
 - [ ] Fase 7 — IA e Open Finance
 
 ## 📄 Licença
