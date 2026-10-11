@@ -1,0 +1,12 @@
+[project]
+name = "financas-pessoais"
+version = "0.1.0"
+description = "Gerenciador de financas pessoais"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.coverage.run]
+source = ["src"]
