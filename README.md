@@ -34,6 +34,28 @@ Segue os princípios de **Clean Architecture** e **SOLID**:
 - Serviços não conhecem CLI nem banco
 - Fácil trocar de backend sem tocar em nada além do repositório
 
+## 📸 Screenshots
+
+### 📊 Evolução do Saldo
+
+![Evolução do Saldo](docs/evolucao_saldo.png)
+
+### 🥧 Despesas por Categoria
+
+![Pizza de Categorias](docs/pizza_categorias.png)
+
+### 📈 Comparativo Mensal
+
+![Comparativo Mensal](docs/comparativo_mensal.png)
+
+### 🎯 Progresso das Metas
+
+![Progresso das Metas](docs/progresso_metas.png)
+
+### 📊 Status dos Orçamentos
+
+![Status dos Orçamentos](docs/status_orcamentos.png)
+
 ## 🚀 Como rodar
 
 ### 1. Clone e instale
@@ -87,15 +109,10 @@ pytest -v -k sqlite
 pytest -v -k json
 ```
 
-## 📸 Screenshots
+O CI roda automaticamente em **2 sistemas operacionais × 3 versões do Python**:
 
-*(Adicione prints dos gráficos gerados aqui depois — copie os PNGs de `data/graficos/` para uma pasta `docs/` e referencie abaixo.)*
-
-<!--
-Exemplo:
-![Evolução do Saldo](docs/evolucao_saldo.png)
-![Pizza de Categorias](docs/pizza_categorias.png)
--->
+- Ubuntu Linux: Python 3.10, 3.11, 3.12
+- Windows: Python 3.10, 3.11, 3.12
 
 ## 🛠️ Stack
 
