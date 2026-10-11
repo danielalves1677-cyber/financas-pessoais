@@ -1,0 +1,1 @@
+"""Páginas adicionais (opcional — a app usa st.tabs)."""
