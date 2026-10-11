@@ -23,3 +23,18 @@ class TransacaoDB(Base):
 
     def __repr__(self) -> str:
         return f"<TransacaoDB {self.id[:8]} {self.descricao} R$ {self.valor}>"
+
+
+class OrcamentoDB(Base):
+    """Tabela 'orcamentos' no banco de dados."""
+
+    __tablename__ = "orcamentos"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    categoria: Mapped[str] = mapped_column(
+        String(50), nullable=False, unique=True, index=True
+    )
+    limite_mensal: Mapped[float] = mapped_column(Float, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<OrcamentoDB {self.categoria} R$ {self.limite_mensal}>"

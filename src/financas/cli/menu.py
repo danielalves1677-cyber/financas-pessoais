@@ -1,5 +1,5 @@
 from financas.config import ARQUIVO_DB, ARQUIVO_TRANSACOES, DB_BACKEND
-from financas.models import TipoTransacao, Transacao
+from financas.models import Orcamento, TipoTransacao, Transacao
 from financas.repositories import criar_repositorio
 from financas.services import FinancasService
 from financas.utils import (
@@ -28,7 +28,7 @@ class MenuCLI:
         print(f"  {titulo}")
         print("=" * 50)
 
-    # ---------- Ações ----------
+    # ---------- Ações: Transações ----------
     def adicionar_receita(self) -> None:
         self._cabecalho("➕ Nova Receita")
         descricao = ler_texto_obrigatorio("Descrição: ")
@@ -92,7 +92,7 @@ class MenuCLI:
             print(f"   Saldo:    {formatar_moeda(valores['saldo'])}")
 
     def remover_transacao(self) -> None:
-        self._cabecalho("🗑️  Remover")
+        self._cabecalho("🗑️  Remover Transação")
         self.listar_transacoes()
         if not self.service.listar():
             return
@@ -107,6 +107,50 @@ class MenuCLI:
                 return
         print("❌ Nenhuma transação encontrada com esse ID.")
 
+    # ---------- Ações: Orçamentos ----------
+    def definir_orcamento(self) -> None:
+        self._cabecalho("🎯 Definir Orçamento")
+        categoria = ler_texto_obrigatorio("Categoria: ")
+        limite = ler_valor_positivo("Limite mensal: R$ ")
+        orc = Orcamento(categoria=categoria, limite_mensal=limite)
+        self.service.salvar_orcamento(orc)
+        print(
+            f"✅ Orçamento de '{categoria}' definido: "
+            f"{formatar_moeda(limite)}/mês"
+        )
+
+    def ver_orcamentos(self) -> None:
+        self._cabecalho("🎯 Status dos Orçamentos (mês atual)")
+        status = self.service.status_orcamento()
+        if not status:
+            print("Nenhum orçamento definido.")
+            return
+        for s in status:
+            emoji = {"ok": "✅", "alerta": "⚠️ ", "estourado": "🚨"}[s["status"]]
+            print(f"\n{emoji} {s['categoria']}")
+            print(f"   Gasto:    {formatar_moeda(s['gasto'])}")
+            print(f"   Limite:   {formatar_moeda(s['limite'])}")
+            print(f"   Uso:      {s['percentual']:.1f}%")
+
+    def remover_orcamento(self) -> None:
+        self._cabecalho("🗑️  Remover Orçamento")
+        orcs = self.service.listar_orcamentos()
+        if not orcs:
+            print("Nenhum orçamento cadastrado.")
+            return
+        for o in orcs:
+            print(f"[{o.id[:8]}] {o.categoria} — {formatar_moeda(o.limite_mensal)}")
+        id_parcial = input("\n8 primeiros caracteres do ID: ").strip()
+        if not id_parcial:
+            print("❌ Nada digitado.")
+            return
+        for o in orcs:
+            if o.id.startswith(id_parcial):
+                if self.service.remover_orcamento(o.id):
+                    print("✅ Orçamento removido!")
+                return
+        print("❌ Não encontrado.")
+
     # ---------- Loop principal ----------
     def executar(self) -> None:
         opcoes = {
@@ -116,6 +160,9 @@ class MenuCLI:
             "4": ("📊 Relatório por Categoria", self.relatorio_categorias),
             "5": ("💼 Ver Resumo", self.mostrar_resumo),
             "6": ("🗑️  Remover Transação", self.remover_transacao),
+            "7": ("🎯 Definir Orçamento", self.definir_orcamento),
+            "8": ("📈 Ver Orçamentos", self.ver_orcamentos),
+            "9": ("🗑️  Remover Orçamento", self.remover_orcamento),
         }
 
         while True:
