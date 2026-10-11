@@ -1,5 +1,6 @@
 pydantic==2.9.2
 SQLAlchemy==2.0.36
 matplotlib==3.9.2
+customtkinter==5.2.2
 pytest==8.3.3
 pytest-cov==5.0.0

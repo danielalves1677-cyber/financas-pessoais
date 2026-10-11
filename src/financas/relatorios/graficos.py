@@ -9,18 +9,18 @@ from typing import Dict, List
 
 import matplotlib
 
-matplotlib.use("Agg")  # backend não-interativo (salva em arquivo)
+matplotlib.use("Agg")  # backend não-interativo
 
 import matplotlib.pyplot as plt
 
-from financas.models import Meta, Transacao, TipoTransacao
+from financas.models import Transacao, TipoTransacao
 
 
 # ---------- Configurações globais ----------
 CORES = {
-    "receita": "#2ecc71",   # verde
-    "despesa": "#e74c3c",   # vermelho
-    "saldo": "#3498db",     # azul
+    "receita": "#2ecc71",
+    "despesa": "#e74c3c",
+    "saldo": "#3498db",
     "ok": "#2ecc71",
     "alerta": "#f39c12",
     "estourado": "#e74c3c",
@@ -42,23 +42,42 @@ def _pasta_saida() -> Path:
     return pasta
 
 
+def _salvar_com_seguranca(fig, caminho: Path) -> Path:
+    """Salva a figura tratando o caso de arquivo aberto (Windows).
+
+    Se o arquivo destino estiver travado (aberto no visualizador), salva
+    com um nome alternativo do tipo 'nome_2.png'.
+    """
+    try:
+        fig.savefig(caminho, dpi=100)
+        return caminho
+    except (PermissionError, OSError):
+        # Arquivo aberto — tenta salvar com sufixo numérico
+        contador = 2
+        while contador < 100:
+            alternativo = caminho.with_name(
+                f"{caminho.stem}_{contador}{caminho.suffix}"
+            )
+            try:
+                fig.savefig(alternativo, dpi=100)
+                return alternativo
+            except (PermissionError, OSError):
+                contador += 1
+        # Desiste
+        raise
+
+
 # ---------- 1. Evolução do saldo (linha) ----------
 def grafico_evolucao_saldo(
     transacoes: List[Transacao],
     meses: int = 6,
 ) -> Path:
-    """Gera gráfico de linha com o saldo acumulado mês a mês.
-
-    Retorna o caminho do PNG gerado.
-    """
-    # Agrupa transações por (ano, mês)
+    """Gera gráfico de linha com o saldo acumulado mês a mês."""
     agora = datetime.now()
     dados: Dict[str, float] = {}
 
-    # Cria os últimos N meses (mesmo que vazios)
     for i in range(meses - 1, -1, -1):
         ref = agora.replace(day=1)
-        # Retrocede i meses
         ano = ref.year
         mes = ref.month - i
         while mes <= 0:
@@ -67,7 +86,6 @@ def grafico_evolucao_saldo(
         chave = f"{ano}-{mes:02d}"
         dados[chave] = 0.0
 
-    # Soma cada transação no mês correspondente
     for t in transacoes:
         chave = f"{t.data.year}-{t.data.month:02d}"
         if chave not in dados:
@@ -77,7 +95,6 @@ def grafico_evolucao_saldo(
         else:
             dados[chave] -= t.valor
 
-    # Calcula saldo acumulado
     meses_ord = sorted(dados.keys())
     saldo_acumulado = []
     acum = 0.0
@@ -85,7 +102,6 @@ def grafico_evolucao_saldo(
         acum += dados[m]
         saldo_acumulado.append(acum)
 
-    # Plota
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.plot(meses_ord, saldo_acumulado, marker="o", color=CORES["saldo"], linewidth=2)
     ax.axhline(0, color="gray", linestyle="--", linewidth=0.8)
@@ -97,9 +113,11 @@ def grafico_evolucao_saldo(
     fig.tight_layout()
 
     caminho = _pasta_saida() / "evolucao_saldo.png"
-    fig.savefig(caminho, dpi=100)
-    plt.close(fig)
-    return caminho
+    try:
+        resultado = _salvar_com_seguranca(fig, caminho)
+    finally:
+        plt.close(fig)
+    return resultado
 
 
 # ---------- 2. Pizza de despesas por categoria ----------
@@ -108,7 +126,6 @@ def grafico_pizza_categorias(
     mes: int | None = None,
     ano: int | None = None,
 ) -> Path:
-    """Gera pizza de despesas por categoria no mês atual (ou indicado)."""
     agora = datetime.now()
     mes = mes or agora.month
     ano = ano or agora.year
@@ -145,9 +162,11 @@ def grafico_pizza_categorias(
 
     fig.tight_layout()
     caminho = _pasta_saida() / "pizza_categorias.png"
-    fig.savefig(caminho, dpi=100)
-    plt.close(fig)
-    return caminho
+    try:
+        resultado = _salvar_com_seguranca(fig, caminho)
+    finally:
+        plt.close(fig)
+    return resultado
 
 
 # ---------- 3. Comparativo mensal (barras) ----------
@@ -155,7 +174,6 @@ def grafico_comparativo_mensal(
     transacoes: List[Transacao],
     meses: int = 6,
 ) -> Path:
-    """Barras agrupadas: receita vs despesa dos últimos N meses."""
     agora = datetime.now()
     dados: Dict[str, Dict[str, float]] = {}
 
@@ -197,14 +215,15 @@ def grafico_comparativo_mensal(
     fig.tight_layout()
 
     caminho = _pasta_saida() / "comparativo_mensal.png"
-    fig.savefig(caminho, dpi=100)
-    plt.close(fig)
-    return caminho
+    try:
+        resultado = _salvar_com_seguranca(fig, caminho)
+    finally:
+        plt.close(fig)
+    return resultado
 
 
-# ---------- 4. Progresso das metas (barras horizontais) ----------
+# ---------- 4. Progresso das metas ----------
 def grafico_progresso_metas(status_metas: List[Dict]) -> Path:
-    """Barras horizontais mostrando progresso (%) de cada meta."""
     fig, ax = plt.subplots(figsize=(10, max(3, len(status_metas) * 0.6)))
 
     if not status_metas:
@@ -226,21 +245,21 @@ def grafico_progresso_metas(status_metas: List[Dict]) -> Path:
         ax.axvline(100, color="gray", linestyle="--", linewidth=0.8)
         ax.grid(True, axis="x", alpha=0.3)
 
-        # Anota o percentual em cada barra
         for i, (p, s) in enumerate(zip(progressos, status_metas)):
             ax.text(p + 1, i, f"{s['progresso']:.1f}%",
                     va="center", fontsize=9)
 
     fig.tight_layout()
     caminho = _pasta_saida() / "progresso_metas.png"
-    fig.savefig(caminho, dpi=100)
-    plt.close(fig)
-    return caminho
+    try:
+        resultado = _salvar_com_seguranca(fig, caminho)
+    finally:
+        plt.close(fig)
+    return resultado
 
 
-# ---------- 5. Status dos orçamentos (barras verticais com cor) ----------
+# ---------- 5. Status dos orçamentos ----------
 def grafico_status_orcamentos(status_orcamentos: List[Dict]) -> Path:
-    """Barras verticais mostrando % de uso de cada orçamento."""
     fig, ax = plt.subplots(figsize=(10, 5))
 
     if not status_orcamentos:
@@ -271,6 +290,8 @@ def grafico_status_orcamentos(status_orcamentos: List[Dict]) -> Path:
 
     fig.tight_layout()
     caminho = _pasta_saida() / "status_orcamentos.png"
-    fig.savefig(caminho, dpi=100)
-    plt.close(fig)
-    return caminho
+    try:
+        resultado = _salvar_com_seguranca(fig, caminho)
+    finally:
+        plt.close(fig)
+    return resultado
