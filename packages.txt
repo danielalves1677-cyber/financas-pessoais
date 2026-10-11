@@ -1,0 +1,4 @@
+build-essential
+libz-dev
+libjpeg-dev
+libfreetype6-dev
