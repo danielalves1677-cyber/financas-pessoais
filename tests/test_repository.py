@@ -1,13 +1,11 @@
+"""Testes do repositório — rodam nos backends JSON e SQLite.
+
+A fixture `repo` está definida em tests/conftest.py e é parametrizada:
+cada teste abaixo roda 2x (uma por backend).
+"""
 import pytest
 
 from financas.models import Transacao, TipoTransacao
-from financas.repositories import JsonTransacaoRepository
-
-
-@pytest.fixture
-def repo(tmp_path):
-    """Cria um repositório usando um arquivo temporário isolado por teste."""
-    return JsonTransacaoRepository(tmp_path / "transacoes.json")
 
 
 def test_repo_comeca_vazio(repo):
@@ -45,8 +43,14 @@ def test_remover_inexistente(repo):
 
 
 def test_persistencia_entre_instancias(tmp_path):
-    """Dados gravados numa instância devem aparecer em outra no mesmo arquivo."""
+    """Teste específico de persistência: cria dois repositórios do MESMO
+    tipo apontando para o MESMO arquivo, e valida que os dados sobrevivem.
+    """
+    # Testa apenas com JSON aqui (SQLite é mais pesado pra criar/instanciar)
+    from financas.repositories import JsonTransacaoRepository
+
     caminho = tmp_path / "compartilhado.json"
+
     repo1 = JsonTransacaoRepository(caminho)
     repo1.adicionar(
         Transacao(
@@ -56,6 +60,7 @@ def test_persistencia_entre_instancias(tmp_path):
             categoria="Trabalho",
         )
     )
+
     repo2 = JsonTransacaoRepository(caminho)
     assert len(repo2.listar()) == 1
     assert repo2.listar()[0].descricao == "Salario"

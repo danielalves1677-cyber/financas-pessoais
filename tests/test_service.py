@@ -1,14 +1,13 @@
+"""Testes do serviço — também rodam nos dois backends."""
 import pytest
 
 from financas.models import Transacao, TipoTransacao
-from financas.repositories import JsonTransacaoRepository
 from financas.services import FinancasService
 
 
 @pytest.fixture
-def service(tmp_path):
-    """Serviço com repositório isolado por teste."""
-    repo = JsonTransacaoRepository(tmp_path / "t.json")
+def service(repo):
+    """Envolve o repositório num FinancasService."""
     return FinancasService(repo)
 
 
