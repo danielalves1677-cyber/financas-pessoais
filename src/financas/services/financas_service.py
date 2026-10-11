@@ -1,8 +1,7 @@
 from datetime import datetime
 from typing import Dict, List
 
-from financas.models import Orcamento, TipoTransacao, Transacao
-from financas.repositories import JsonTransacaoRepository, SqliteTransacaoRepository
+from financas.models import Meta, Orcamento, TipoTransacao, Transacao
 
 
 class FinancasService:
@@ -31,6 +30,16 @@ class FinancasService:
     def listar_orcamentos(self) -> List[Orcamento]:
         return self.repo.listar_orcamentos()
 
+    # ---------- Cadastro de metas ----------
+    def salvar_meta(self, meta: Meta) -> None:
+        self.repo.salvar_meta(meta)
+
+    def remover_meta(self, meta_id: str) -> bool:
+        return self.repo.remover_meta(meta_id)
+
+    def listar_metas(self) -> List[Meta]:
+        return self.repo.listar_metas()
+
     # ---------- Cálculos gerais ----------
     def total_receitas(self) -> float:
         return sum(t.valor for t in self.listar() if t.tipo == TipoTransacao.RECEITA)
@@ -53,7 +62,6 @@ class FinancasService:
 
     # ---------- Regras de orçamento ----------
     def gasto_mes_atual(self, categoria: str) -> float:
-        """Soma das despesas da categoria no mês atual."""
         agora = datetime.now()
         total = 0.0
         for t in self.listar():
@@ -67,15 +75,6 @@ class FinancasService:
         return total
 
     def status_orcamento(self) -> List[Dict]:
-        """Retorna o status de cada orçamento no mês atual.
-
-        Cada item contém:
-            - categoria
-            - limite
-            - gasto
-            - percentual (0-∞)
-            - status: 'ok' | 'alerta' | 'estourado'
-        """
         resultado = []
         for orc in self.listar_orcamentos():
             gasto = self.gasto_mes_atual(orc.categoria)
@@ -95,6 +94,62 @@ class FinancasService:
                     "limite": orc.limite_mensal,
                     "gasto": gasto,
                     "percentual": percentual,
+                    "status": status,
+                }
+            )
+        return resultado
+
+    # ---------- Regras de meta ----------
+    @staticmethod
+    def progresso_meta(meta: Meta) -> float:
+        if meta.valor_alvo <= 0:
+            return 0.0
+        return (meta.valor_atual / meta.valor_alvo) * 100
+
+    @staticmethod
+    def dias_restantes(meta: Meta) -> int:
+        return (meta.prazo - datetime.now().date()).days
+
+    @staticmethod
+    def meses_restantes(meta: Meta) -> int:
+        dias = (meta.prazo - datetime.now().date()).days
+        if dias <= 0:
+            return 0
+        return max(1, (dias + 29) // 30)
+
+    @staticmethod
+    def valor_mensal_necessario(meta: Meta) -> float:
+        falta = meta.valor_alvo - meta.valor_atual
+        if falta <= 0:
+            return 0.0
+        meses = FinancasService.meses_restantes(meta)
+        if meses <= 0:
+            return falta
+        return falta / meses
+
+    def status_metas(self) -> List[Dict]:
+        resultado = []
+        for m in self.listar_metas():
+            progresso = self.progresso_meta(m)
+            dias = self.dias_restantes(m)
+            meses = self.meses_restantes(m)
+            mensal = self.valor_mensal_necessario(m)
+
+            if m.valor_atual >= m.valor_alvo:
+                status = "concluida"
+            elif dias < 0:
+                status = "atrasada"
+            else:
+                status = "em_dia"
+
+            resultado.append(
+                {
+                    "meta": m,
+                    "nome": m.nome,
+                    "progresso": progresso,
+                    "dias_restantes": dias,
+                    "meses_restantes": meses,
+                    "valor_mensal_necessario": mensal,
                     "status": status,
                 }
             )

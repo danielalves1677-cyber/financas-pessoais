@@ -1,4 +1,4 @@
-from .db_models import OrcamentoDB, TransacaoDB
+from .db_models import MetaDB, OrcamentoDB, TransacaoDB
 from .factory import criar_repositorio
 from .json_repository import JsonTransacaoRepository
 from .sqlite_repository import SqliteTransacaoRepository
@@ -8,5 +8,6 @@ __all__ = [
     "SqliteTransacaoRepository",
     "TransacaoDB",
     "OrcamentoDB",
+    "MetaDB",
     "criar_repositorio",
 ]

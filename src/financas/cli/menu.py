@@ -1,5 +1,7 @@
+from datetime import datetime
+
 from financas.config import ARQUIVO_DB, ARQUIVO_TRANSACOES, DB_BACKEND
-from financas.models import Orcamento, TipoTransacao, Transacao
+from financas.models import Meta, Orcamento, TipoTransacao, Transacao
 from financas.repositories import criar_repositorio
 from financas.services import FinancasService
 from financas.utils import (
@@ -28,7 +30,7 @@ class MenuCLI:
         print(f"  {titulo}")
         print("=" * 50)
 
-    # ---------- Ações: Transações ----------
+    # ---------- Transações ----------
     def adicionar_receita(self) -> None:
         self._cabecalho("➕ Nova Receita")
         descricao = ler_texto_obrigatorio("Descrição: ")
@@ -107,7 +109,7 @@ class MenuCLI:
                 return
         print("❌ Nenhuma transação encontrada com esse ID.")
 
-    # ---------- Ações: Orçamentos ----------
+    # ---------- Orçamentos ----------
     def definir_orcamento(self) -> None:
         self._cabecalho("🎯 Definir Orçamento")
         categoria = ler_texto_obrigatorio("Categoria: ")
@@ -151,6 +153,108 @@ class MenuCLI:
                 return
         print("❌ Não encontrado.")
 
+    # ---------- Metas ----------
+    def criar_meta(self) -> None:
+        self._cabecalho("🎯 Nova Meta")
+        nome = ler_texto_obrigatorio("Nome da meta: ")
+        valor_alvo = ler_valor_positivo("Valor alvo: R$ ")
+
+        while True:
+            try:
+                data_str = input("Prazo (DD/MM/AAAA): ").strip()
+                prazo = datetime.strptime(data_str, "%d/%m/%Y").date()
+                if prazo < datetime.now().date():
+                    print("❌ O prazo deve ser no futuro.")
+                    continue
+                break
+            except ValueError:
+                print("❌ Data inválida. Use o formato DD/MM/AAAA.")
+
+        meta = Meta(nome=nome, valor_alvo=valor_alvo, prazo=prazo)
+        self.service.salvar_meta(meta)
+        print(
+            f"✅ Meta '{nome}' criada! Alvo: {formatar_moeda(valor_alvo)} "
+            f"até {data_str}"
+        )
+
+    def ver_metas(self) -> None:
+        self._cabecalho("📈 Status das Metas")
+        status = self.service.status_metas()
+        if not status:
+            print("Nenhuma meta cadastrada.")
+            return
+        for s in status:
+            emoji = {
+                "concluida": "🏆",
+                "atrasada": "⚠️ ",
+                "em_dia": "🎯",
+            }[s["status"]]
+            m = s["meta"]
+            print(f"\n{emoji} {s['nome']}")
+            print(
+                f"   Progresso: {formatar_moeda(m.valor_atual)} / "
+                f"{formatar_moeda(m.valor_alvo)} ({s['progresso']:.1f}%)"
+            )
+            pct = min(100, s["progresso"])
+            preenchido = int(pct / 5)
+            barra = "█" * preenchido + "░" * (20 - preenchido)
+            print(f"   [{barra}]")
+            print(
+                f"   Prazo: {m.prazo.strftime('%d/%m/%Y')} "
+                f"({s['dias_restantes']} dias)"
+            )
+
+            if s["status"] == "concluida":
+                print("   ✅ Meta concluída! Parabéns!")
+            elif s["status"] == "atrasada":
+                falta = m.valor_alvo - m.valor_atual
+                print(f"   ⚠️  ATRASADA! Falta {formatar_moeda(falta)}")
+            else:
+                print(
+                    f"   💡 Guarde {formatar_moeda(s['valor_mensal_necessario'])}/mês"
+                )
+
+    def atualizar_meta(self) -> None:
+        self._cabecalho("💰 Atualizar Progresso de Meta")
+        metas = self.service.listar_metas()
+        if not metas:
+            print("Nenhuma meta cadastrada.")
+            return
+        for m in metas:
+            print(
+                f"[{m.id[:8]}] {m.nome} — "
+                f"{formatar_moeda(m.valor_atual)} / {formatar_moeda(m.valor_alvo)}"
+            )
+        id_parcial = input("\n8 primeiros caracteres do ID: ").strip()
+        meta = next((m for m in metas if m.id.startswith(id_parcial)), None)
+        if meta is None:
+            print("❌ Meta não encontrada.")
+            return
+
+        valor = ler_valor_positivo("Valor a adicionar: R$ ")
+        meta.valor_atual += valor
+        self.service.salvar_meta(meta)
+        print(f"✅ Progresso atualizado: {formatar_moeda(meta.valor_atual)}")
+
+    def remover_meta(self) -> None:
+        self._cabecalho("🗑️  Remover Meta")
+        metas = self.service.listar_metas()
+        if not metas:
+            print("Nenhuma meta cadastrada.")
+            return
+        for m in metas:
+            print(f"[{m.id[:8]}] {m.nome}")
+        id_parcial = input("\n8 primeiros caracteres do ID: ").strip()
+        if not id_parcial:
+            print("❌ Nada digitado.")
+            return
+        for m in metas:
+            if m.id.startswith(id_parcial):
+                if self.service.remover_meta(m.id):
+                    print(f"✅ Meta '{m.nome}' removida!")
+                return
+        print("❌ Não encontrada.")
+
     # ---------- Loop principal ----------
     def executar(self) -> None:
         opcoes = {
@@ -163,6 +267,10 @@ class MenuCLI:
             "7": ("🎯 Definir Orçamento", self.definir_orcamento),
             "8": ("📈 Ver Orçamentos", self.ver_orcamentos),
             "9": ("🗑️  Remover Orçamento", self.remover_orcamento),
+            "10": ("🎯 Criar Meta", self.criar_meta),
+            "11": ("📈 Ver Metas", self.ver_metas),
+            "12": ("💰 Atualizar Meta", self.atualizar_meta),
+            "13": ("🗑️  Remover Meta", self.remover_meta),
         }
 
         while True:

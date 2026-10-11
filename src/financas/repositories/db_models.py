@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import DateTime, Float, Integer, String
+from sqlalchemy import Date, DateTime, Float, Integer, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -38,3 +38,18 @@ class OrcamentoDB(Base):
 
     def __repr__(self) -> str:
         return f"<OrcamentoDB {self.categoria} R$ {self.limite_mensal}>"
+
+
+class MetaDB(Base):
+    """Tabela 'metas' no banco de dados."""
+
+    __tablename__ = "metas"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    nome: Mapped[str] = mapped_column(String(100), nullable=False)
+    valor_alvo: Mapped[float] = mapped_column(Float, nullable=False)
+    valor_atual: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    prazo: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+
+    def __repr__(self) -> str:
+        return f"<MetaDB {self.nome} R$ {self.valor_atual}/{self.valor_alvo}>"

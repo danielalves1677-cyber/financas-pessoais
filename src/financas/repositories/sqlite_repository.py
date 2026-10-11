@@ -4,13 +4,13 @@ from typing import List
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
-from financas.models import Orcamento, Transacao
+from financas.models import Meta, Orcamento, Transacao
 
-from .db_models import Base, OrcamentoDB, TransacaoDB
+from .db_models import Base, MetaDB, OrcamentoDB, TransacaoDB
 
 
 class SqliteTransacaoRepository:
-    """Repositório SQLite para transações e orçamentos."""
+    """Repositório SQLite para transações, orçamentos e metas."""
 
     def __init__(self, caminho: Path | str):
         self.caminho = Path(caminho)
@@ -77,7 +77,6 @@ class SqliteTransacaoRepository:
             ]
 
     def salvar_orcamento(self, orcamento: Orcamento) -> None:
-        """Upsert: cria se não existe, atualiza se já existe (por categoria)."""
         with Session(self.engine) as session:
             stmt = select(OrcamentoDB).where(
                 OrcamentoDB.categoria == orcamento.categoria
@@ -98,6 +97,50 @@ class SqliteTransacaoRepository:
     def remover_orcamento(self, orcamento_id: str) -> bool:
         with Session(self.engine) as session:
             db = session.get(OrcamentoDB, orcamento_id)
+            if db is None:
+                return False
+            session.delete(db)
+            session.commit()
+            return True
+
+    # ---------- Metas ----------
+    def listar_metas(self) -> List[Meta]:
+        with Session(self.engine) as session:
+            stmt = select(MetaDB).order_by(MetaDB.prazo)
+            return [
+                Meta(
+                    id=m.id,
+                    nome=m.nome,
+                    valor_alvo=m.valor_alvo,
+                    valor_atual=m.valor_atual,
+                    prazo=m.prazo,
+                )
+                for m in session.scalars(stmt)
+            ]
+
+    def salvar_meta(self, meta: Meta) -> None:
+        with Session(self.engine) as session:
+            existente = session.get(MetaDB, meta.id)
+            if existente is None:
+                session.add(
+                    MetaDB(
+                        id=meta.id,
+                        nome=meta.nome,
+                        valor_alvo=meta.valor_alvo,
+                        valor_atual=meta.valor_atual,
+                        prazo=meta.prazo,
+                    )
+                )
+            else:
+                existente.nome = meta.nome
+                existente.valor_alvo = meta.valor_alvo
+                existente.valor_atual = meta.valor_atual
+                existente.prazo = meta.prazo
+            session.commit()
+
+    def remover_meta(self, meta_id: str) -> bool:
+        with Session(self.engine) as session:
+            db = session.get(MetaDB, meta_id)
             if db is None:
                 return False
             session.delete(db)
