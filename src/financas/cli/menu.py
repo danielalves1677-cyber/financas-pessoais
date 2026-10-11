@@ -1,6 +1,6 @@
-from financas.config import ARQUIVO_TRANSACOES
+from financas.config import ARQUIVO_DB, ARQUIVO_TRANSACOES, DB_BACKEND
 from financas.models import TipoTransacao, Transacao
-from financas.repositories import JsonTransacaoRepository
+from financas.repositories import criar_repositorio
 from financas.services import FinancasService
 from financas.utils import (
     formatar_data,
@@ -14,8 +14,13 @@ class MenuCLI:
     """Interface de linha de comando do gerenciador financeiro."""
 
     def __init__(self):
-        repo = JsonTransacaoRepository(ARQUIVO_TRANSACOES)
+        repo = criar_repositorio(
+            backend=DB_BACKEND,
+            caminho_json=ARQUIVO_TRANSACOES,
+            caminho_db=ARQUIVO_DB,
+        )
         self.service = FinancasService(repo)
+        print(f"🔌 Backend ativo: {DB_BACKEND}")
 
     # ---------- Helpers ----------
     def _cabecalho(self, titulo: str) -> None:

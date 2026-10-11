@@ -1,15 +1,15 @@
+import os
 from pathlib import Path
 
 # Raiz do projeto: .../financas-pessoais
-# __file__ = src/financas/config/settings.py
-# parents[0] = config
-# parents[1] = financas
-# parents[2] = src
-# parents[3] = financas-pessoais  <-- queremos essa
 RAIZ_PROJETO = Path(__file__).resolve().parents[3]
 
 PASTA_DADOS = RAIZ_PROJETO / "data"
 ARQUIVO_TRANSACOES = PASTA_DADOS / "transacoes.json"
+ARQUIVO_DB = PASTA_DADOS / "financas.db"
+
+# Backend padrão: 'json' ou 'sqlite' (controlado por env var DB_BACKEND)
+DB_BACKEND = os.getenv("DB_BACKEND", "sqlite").lower()
 
 # Garante que a pasta existe
 PASTA_DADOS.mkdir(parents=True, exist_ok=True)
