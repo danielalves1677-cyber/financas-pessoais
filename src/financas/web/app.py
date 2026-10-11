@@ -10,6 +10,18 @@ import sys
 from datetime import date, datetime
 from pathlib import Path
 
+# ==========================================================
+# AJUSTE DE PATH (necessário para o Streamlit Cloud)
+# ==========================================================
+# Garante que o pacote 'financas' (em src/) seja encontrado
+_raiz = Path(__file__).resolve().parents[3]  # .../financas-pessoais
+_src = _raiz / "src"
+if str(_src) not in sys.path:
+    sys.path.insert(0, str(_src))
+
+# ==========================================================
+# Imports do projeto e de terceiros
+# ==========================================================
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -97,7 +109,7 @@ st.divider()
 # Abas
 # ==========================================================
 tab_dash, tab_trans, tab_orc, tab_metas, tab_graf = st.tabs(
-    ["🏠 Dashboard", "📋 Transações", "🎯 Orçamentos", "📈 Metas", "📊 Gráficos"]
+    ["🏠 Painel de controle", "📋 Transações", "🎯 Orçamentos", "📈 Metas", "📊 Gráficos"]
 )
 
 
